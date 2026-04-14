@@ -1,0 +1,9 @@
+{
+  "name": "ps-controller-link",
+  "version-string": "1.0.0",
+  "dependencies": [
+    "hidapi",
+    "cpp-httplib",
+    "nlohmann-json"
+  ]
+}
