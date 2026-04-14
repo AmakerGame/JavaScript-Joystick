@@ -1,23 +1,44 @@
-name: Build Release
+name: Multi-Platform Build
 on: [push]
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure CMake
-        # Використовуємо вбудований у систему vcpkg
+      - name: Build
         run: |
-          cmake -B build -S . "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-
-      - name: Build Project
-        run: |
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake
           cmake --build build --config Release
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: ControllerLink-Exe
-          path: build/Release/*.exe
+          name: Windows-Old-Exe
+          path: build/Release/old.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libhidapi-dev
+      - name: Build
+        run: |
+          cmake -B build 
+          cmake --build build --config Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Linux-Binary
+          path: build/Controller_Linux
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          cmake -B build
+          cmake --build build --config Release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MacOS-Binary
+          path: build/Controller_MacOS
