@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install HIDAPI
+      - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y libhidapi-dev pkg-config
       - name: Build
         run: |
@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install HIDAPI
+      - name: Install Dependencies
         run: brew install hidapi
       - name: Build
         run: |
