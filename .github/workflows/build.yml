@@ -8,7 +8,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: |
-          cmake -B build -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake
+          cmake -B build -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
           cmake --build build --config Release
       - uses: actions/upload-artifact@v4
         with:
@@ -19,11 +19,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Dependencies
-        run: sudo apt-get update && sudo apt-get install -y libhidapi-dev
+      - name: Install HIDAPI
+        run: sudo apt-get update && sudo apt-get install -y libhidapi-dev pkg-config
       - name: Build
         run: |
-          cmake -B build 
+          cmake -B build
           cmake --build build --config Release
       - uses: actions/upload-artifact@v4
         with:
@@ -34,6 +34,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install HIDAPI
+        run: brew install hidapi
       - name: Build
         run: |
           cmake -B build
