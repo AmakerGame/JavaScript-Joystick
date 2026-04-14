@@ -1,6 +1,6 @@
 {
-  "name": "ps-controller-link",
-  "version-string": "1.0.0",
+  "name": "controller-link",
+  "version": "1.0.0",
   "dependencies": [
     "hidapi",
     "cpp-httplib",
