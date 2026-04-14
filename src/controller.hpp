@@ -1,5 +1,4 @@
 #pragma once
-#include <vector>
 #include <cstdint>
 #include "hidapi.h"
 
@@ -15,5 +14,4 @@ public:
 private:
     hid_device* handle = nullptr;
     ConnType connection = ConnType::USB;
-    uint32_t calculate_crc32(uint8_t* data, size_t len);
 };
