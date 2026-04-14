@@ -1,25 +1,23 @@
 #include <windows.h>
 #include <shellapi.h>
-#include <iostream>
 #include <thread>
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-#include "controller.hpp"
+#include "controller.hpp" // Ми створимо цей файл нижче
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 
 using json = nlohmann::json;
 
-// Глобальні змінні для керування вікном та сервером
 NOTIFYICONDATA nid = {};
 bool keep_running = true;
 httplib::Server svr;
 
-// Обробка повідомлень від іконки в треї
+// Обробка кліків по іконці в треї
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_TRAYICON) {
-        if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONUP) {
+        if (lParam == WM_RBUTTONUP) { // Правий клік - меню виходу
             POINT pt;
             GetCursorPos(&pt);
             HMENU hMenu = CreatePopupMenu();
@@ -38,33 +36,33 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-int main() {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     // 1. ЗАХИСТ ВІД ПОВТОРНОГО ЗАПУСКУ
     HANDLE hMutex = CreateMutex(NULL, TRUE, "Global\\EdytorStudioControllerMutex");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        MessageBox(NULL, "Application is already running!", "Controller Link", MB_OK | MB_ICONINFORMATION);
+        MessageBox(NULL, "Application is already running!", "Controller Link", MB_OK | MB_ICONEXCLAMATION);
         return 0;
     }
 
-    // 2. СТВОРЕННЯ ПРИХОВАНОГО ВІКНА ДЛЯ ТРЕЮ
+    // 2. ПРИХОВАНЕ ВІКНО ДЛЯ ОБРОБКИ ТРЕЮ
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = "TrayWindowClass";
+    wc.hInstance = hInstance;
+    wc.lpszClassName = "TrayClass";
     RegisterClass(&wc);
-    HWND hwnd = CreateWindowEx(0, "TrayWindowClass", "TrayWindow", 0, 0, 0, 0, 0, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = CreateWindowEx(0, "TrayClass", "Tray", 0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
 
-    // 3. ДОДАВАННЯ ІКОНКИ В ТРЕЙ
+    // 3. ІКОНКА В ТРЕЇ
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hwnd;
     nid.uID = 1;
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
-    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION); // Можна змінити на власну .ico
+    nid.hIcon = LoadIcon(NULL, IDI_APPLICATION);
     strcpy(nid.szTip, "Edytor Studio Controller Link");
     Shell_NotifyIcon(NIM_ADD, &nid);
 
-    // 4. ЗАПУСК КОНТРОЛЕРА ТА СЕРВЕРА В ОКРЕМОМУ ПОТОЦІ
+    // 4. КОНТРОЛЕР ТА СЕРВЕР
     PSController controller;
     controller.connect();
 
@@ -80,17 +78,14 @@ int main() {
         svr.listen("127.0.0.1", 8080);
     });
 
-    // 5. ЦИКЛ ПОВІДОМЛЕНЬ WINDOWS
+    // 5. ЦИКЛ ПОВІДОМЛЕНЬ
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0) && keep_running) {
+    while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 
-    // Очищення
     Shell_NotifyIcon(NIM_DELETE, &nid);
-    if (server_thread.joinable()) server_thread.detach(); // Зупиняємо сервер силоміць
     if (hMutex) ReleaseMutex(hMutex);
-    
     return 0;
 }
