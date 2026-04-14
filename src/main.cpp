@@ -1,9 +1,14 @@
+#define WIN32_LEAN_AND_MEAN // КРИТИЧНО: Виправляє помилку зі скріншота
 #include <windows.h>
+#include <winsock2.h>       // Обов'язково перед іншими заголовками
 #include <shellapi.h>
 #include <thread>
+#include <iostream>
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-#include "controller.hpp" // Ми створимо цей файл нижче
+#include "controller.hpp"
+
+#pragma comment(lib, "ws2_32.lib") // Додає бібліотеку сокетів
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
@@ -14,10 +19,9 @@ NOTIFYICONDATA nid = {};
 bool keep_running = true;
 httplib::Server svr;
 
-// Обробка кліків по іконці в треї
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (uMsg == WM_TRAYICON) {
-        if (lParam == WM_RBUTTONUP) { // Правий клік - меню виходу
+        if (lParam == WM_RBUTTONUP) {
             POINT pt;
             GetCursorPos(&pt);
             HMENU hMenu = CreatePopupMenu();
@@ -37,14 +41,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    // 1. ЗАХИСТ ВІД ПОВТОРНОГО ЗАПУСКУ
+    // ЗАХИСТ ВІД ПОВТОРНОГО ЗАПУСКУ
     HANDLE hMutex = CreateMutex(NULL, TRUE, "Global\\EdytorStudioControllerMutex");
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         MessageBox(NULL, "Application is already running!", "Controller Link", MB_OK | MB_ICONEXCLAMATION);
         return 0;
     }
 
-    // 2. ПРИХОВАНЕ ВІКНО ДЛЯ ОБРОБКИ ТРЕЮ
+    // ТРЕЙ ТА ВІКНО
     WNDCLASS wc = {0};
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
@@ -52,7 +56,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     RegisterClass(&wc);
     HWND hwnd = CreateWindowEx(0, "TrayClass", "Tray", 0, 0, 0, 0, 0, NULL, NULL, hInstance, NULL);
 
-    // 3. ІКОНКА В ТРЕЇ
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd = hwnd;
     nid.uID = 1;
@@ -62,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     strcpy(nid.szTip, "Edytor Studio Controller Link");
     Shell_NotifyIcon(NIM_ADD, &nid);
 
-    // 4. КОНТРОЛЕР ТА СЕРВЕР
+    // КОНТРОЛЕР
     PSController controller;
     controller.connect();
 
@@ -78,7 +81,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         svr.listen("127.0.0.1", 8080);
     });
 
-    // 5. ЦИКЛ ПОВІДОМЛЕНЬ
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
         TranslateMessage(&msg);
