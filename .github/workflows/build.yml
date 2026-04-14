@@ -7,18 +7,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install vcpkg
+      - name: Configure CMake
+        # Використовуємо вбудований у систему vcpkg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.bat
+          cmake -B build -S . "-DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build Project
         run: |
-          cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
           cmake --build build --config Release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4 # Оновлено з v3 на v4
+        uses: actions/upload-artifact@v4
         with:
           name: ControllerLink-Exe
           path: build/Release/*.exe
