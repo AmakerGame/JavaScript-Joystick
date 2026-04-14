@@ -5,12 +5,14 @@ PSController::PSController() { hid_init(); }
 PSController::~PSController() { if(handle) hid_close(handle); hid_exit(); }
 
 bool PSController::connect() {
-    handle = hid_open(0x054c, 0x09cc, NULL); // DualShock 4
-    if (!handle) handle = hid_open(0x054c, 0x0ce6, NULL); // DualSense
+    // Шукаємо DS4 або DualSense
+    handle = hid_open(0x054c, 0x09cc, NULL); 
+    if (!handle) handle = hid_open(0x054c, 0x0ce6, NULL);
     
     if (handle) {
         unsigned char buf[64];
-        connection = (hid_get_feature_report(handle, buf, sizeof(buf)) > 0) ? ConnType::USB : ConnType::BT;
+        int res = hid_get_feature_report(handle, buf, sizeof(buf));
+        connection = (res > 0) ? ConnType::USB : ConnType::BT;
         return true;
     }
     return false;
