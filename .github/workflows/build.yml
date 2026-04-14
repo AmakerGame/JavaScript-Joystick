@@ -5,7 +5,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Install vcpkg
         run: |
@@ -18,7 +18,7 @@ jobs:
           cmake --build build --config Release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4 # Оновлено з v3 на v4
         with:
           name: ControllerLink-Exe
           path: build/Release/*.exe
